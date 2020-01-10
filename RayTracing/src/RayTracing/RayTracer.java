@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 
@@ -19,12 +20,14 @@ public class RayTracer {
 
     public int imageWidth;
     public int imageHeight;
+    private Scene scene;
 
     /**
      * Runs the ray tracer. Takes scene file, output image file and image size as input.
      */
     public static void main(String[] args) {
 
+        //System.out.println("hiiiiiii");
         try {
 
             RayTracer tracer = new RayTracer();
@@ -45,7 +48,7 @@ public class RayTracer {
                 tracer.imageHeight = Integer.parseInt(args[3]);
             }
 
-
+            tracer.scene = new Scene();
             // Parse scene file:
             tracer.parseScene(sceneFileName);
 
@@ -69,13 +72,15 @@ public class RayTracer {
     public void parseScene(String sceneFileName) throws IOException, RayTracerException
     {
         FileReader fr = new FileReader(sceneFileName);
-
         BufferedReader r = new BufferedReader(fr);
         String line = null;
         int lineNum = 0;
         System.out.println("Started parsing scene file " + sceneFileName);
-
-
+        ArrayList<Material> materials = new ArrayList<>();
+        ArrayList<Sphere> spheres = new ArrayList<>();
+        ArrayList<Plane> planes = new ArrayList<>();
+        ArrayList<Triangle> triangles = new ArrayList<>();
+        ArrayList<Light> lights = new ArrayList<>();
 
         while ((line = r.readLine()) != null)
         {
@@ -95,44 +100,56 @@ public class RayTracer {
                 if (code.equals("cam"))
                 {
                     // Add code here to parse camera parameters
+                    Camera camera = createCameraFromParams(params);
+                    scene.setCamera(camera);
 
                     System.out.println(String.format("Parsed camera parameters (line %d)", lineNum));
                 }
                 else if (code.equals("set"))
                 {
                     // Add code here to parse general settings parameters
+                    Settings settings = createSettingsFromParams(params);
+                    scene.setSettings(settings);
 
                     System.out.println(String.format("Parsed general settings (line %d)", lineNum));
                 }
                 else if (code.equals("mtl"))
                 {
                     // Add code here to parse material parameters
+                    Material material = createMaterialFromParams(params);
+                    materials.add(material);
 
                     System.out.println(String.format("Parsed material (line %d)", lineNum));
                 }
                 else if (code.equals("sph"))
                 {
                     // Add code here to parse sphere parameters
-
-                    // Example (you can implement this in many different ways!):
-                    // Sphere sphere = new Sphere();
-                    // sphere.setCenter(params[0], params[1], params[2]);
-                    // sphere.setRadius(params[3]);
-                    // sphere.setMaterial(params[4]);
+                    Sphere sphere = createSphereFromParams(params);
+                    spheres.add(sphere);
 
                     System.out.println(String.format("Parsed sphere (line %d)", lineNum));
                 }
                 else if (code.equals("pln"))
                 {
                     // Add code here to parse plane parameters
+                    Plane plane = createPlaneFromParams(params);
+                    planes.add(plane);
 
                     System.out.println(String.format("Parsed plane (line %d)", lineNum));
                 }
                 else if (code.equals("lgt"))
                 {
                     // Add code here to parse light parameters
+                    Light light = createLightFromParams(params);
+                    lights.add(light);
 
                     System.out.println(String.format("Parsed light (line %d)", lineNum));
+                }
+                else if (code.equals("trg")) {
+                    Triangle triangle = createTriangleFromParams(params);
+                    triangles.add(triangle);
+
+                    System.out.println(String.format("Parsed triangle (line %d)", lineNum));
                 }
                 else
                 {
@@ -140,6 +157,9 @@ public class RayTracer {
                 }
             }
         }
+
+        scene.setMaterials(materials);
+
 
         // It is recommended that you check here that the scene is valid,
         // for example camera settings and all necessary materials were defined.
@@ -158,6 +178,19 @@ public class RayTracer {
         // Create a byte array to hold the pixel data:
         byte[] rgbData = new byte[this.imageWidth * this.imageHeight * 3];
 
+        SceneRenderer renderer = new SceneRenderer(scene);
+        Color[][] image = renderer.renderScene(imageWidth, imageHeight);
+
+        for (int row = 0; row < imageHeight; row++)
+        {
+            for (int col = 0; col < imageWidth; col++)
+            {
+                Color color = image[row][col];
+                rgbData[(row*imageWidth + col)*3] = (byte) (color.getRed() * 255);
+                rgbData[(row*imageWidth + col)*3 + 1] = (byte) (color.getGreen() * 255);
+                rgbData[(row*imageWidth + col)*3 + 2] = (byte) (color.getBlue() * 255);
+            }
+        }
 
         // Put your ray tracing code here!
         //
@@ -224,5 +257,82 @@ public class RayTracer {
         public RayTracerException(String msg) {  super(msg); }
     }
 
+    private Vector createVectorFromParams(String[] params, int index1, int index2, int index3) {
+        return new Vector(Double.parseDouble(params[index1]),
+                Double.parseDouble(params[index2]),
+                Double.parseDouble(params[index3]));
+    }
+
+    private Color createColorFromParams(String[] params, int index1, int index2, int index3) {
+        return new Color(Double.parseDouble(params[index1]),
+                Double.parseDouble(params[index2]),
+                Double.parseDouble(params[index3]));
+    }
+
+    private Camera createCameraFromParams(String[] params) {
+        Vector position = createVectorFromParams(params, 0, 1, 2);
+        Vector lookAt =  createVectorFromParams(params, 3, 4, 5);
+        Vector upVector =  createVectorFromParams(params, 6, 7, 8);
+        double screenDistance = Double.parseDouble(params[9]);
+        double screenWidth = Double.parseDouble(params[10]);
+
+        return new Camera(position, lookAt, upVector, screenDistance, screenWidth);
+    }
+
+    private Triangle createTriangleFromParams(String[] params) {
+        Vector vertex1 = createVectorFromParams(params, 0, 1, 2);
+        Vector vertex2 = createVectorFromParams(params, 3, 4, 5);
+        Vector vertex3 = createVectorFromParams(params, 6, 7, 8);
+        int materialIndex = Integer.parseInt(params[9]);
+
+        return new Triangle(vertex1, vertex2, vertex3, materialIndex);
+    }
+
+    private Light createLightFromParams(String[] params) {
+        Vector position = createVectorFromParams(params, 0, 1, 2);
+        Color color = createColorFromParams(params, 3, 4, 5);
+        double specularIntensity = Double.parseDouble(params[6]);
+        double shadowIntensity = Double.parseDouble(params[7]);
+        double width = Double.parseDouble(params[8]);
+
+        return new Light(position, color, specularIntensity, shadowIntensity, width);
+    }
+
+    private Plane createPlaneFromParams(String[] params) {
+
+        Vector normalVector = createVectorFromParams(params, 0, 1, 2);
+        double offset = Double.parseDouble(params[3]);
+        int materialIndex = Integer.parseInt(params[4]);
+
+        return new Plane(normalVector, offset, materialIndex);
+    }
+
+    private Sphere createSphereFromParams(String[] params) {
+
+        Vector centerPosition = createVectorFromParams(params, 0, 1, 2);
+        double radius = Double.parseDouble(params[3]);
+        int materialIndex = Integer.parseInt(params[4]);
+
+        return new Sphere(centerPosition, radius, materialIndex);
+    }
+
+    private Material createMaterialFromParams(String[] params) {
+        Color diffuseColor = createColorFromParams(params, 0, 1, 2);
+        Color specularColor = createColorFromParams(params, 3, 4, 5);
+        Color reflectionColor = createColorFromParams(params, 6, 7, 8);
+        double phongSpecularityCoefficient = Double.parseDouble(params[9]);
+        double transparencyValue = Double.parseDouble(params[10]);
+
+        return new Material(diffuseColor, specularColor, reflectionColor, phongSpecularityCoefficient, transparencyValue);
+    }
+
+    private Settings createSettingsFromParams(String[] params) {
+        Color backgroundColor = createColorFromParams(params, 0, 1, 2);
+        int numShadowRays = Integer.parseInt(params[3]);
+        int maxNumOfRecursions = Integer.parseInt(params[4]);
+        int superSamplingLevel = Integer.parseInt(params[5]);
+
+        return new Settings(backgroundColor, numShadowRays, maxNumOfRecursions, superSamplingLevel);
+    }
 
 }
