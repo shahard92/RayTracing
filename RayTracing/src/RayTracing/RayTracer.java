@@ -27,14 +27,13 @@ public class RayTracer {
      */
     public static void main(String[] args) {
 
-        //System.out.println("hiiiiiii");
         try {
 
             RayTracer tracer = new RayTracer();
 
             // Default values:
-            tracer.imageWidth = 500;
-            tracer.imageHeight = 500;
+            tracer.imageWidth = 200;
+            tracer.imageHeight = 200;
 
             if (args.length < 2)
                 throw new RayTracerException("Not enough arguments provided. Please specify an input scene file and an output image file for rendering.");
@@ -159,6 +158,10 @@ public class RayTracer {
         }
 
         scene.setMaterials(materials);
+        scene.setPlanes(planes);
+        scene.setLights(lights);
+        scene.setSpheres(spheres);
+        scene.setTriangles(triangles);
 
 
         // It is recommended that you check here that the scene is valid,
@@ -179,18 +182,32 @@ public class RayTracer {
         byte[] rgbData = new byte[this.imageWidth * this.imageHeight * 3];
 
         SceneRenderer renderer = new SceneRenderer(scene);
-        Color[][] image = renderer.renderScene(imageWidth, imageHeight);
 
-        for (int row = 0; row < imageHeight; row++)
-        {
-            for (int col = 0; col < imageWidth; col++)
+        Color[][] image = new Color[imageWidth][imageHeight];
+        try {
+            image = renderer.renderScene(imageWidth, imageHeight);
+        }
+        catch (Exception e) {
+            e.getStackTrace();
+            e.printStackTrace();
+        }
+
+        try {
+            for (int row = 0; row < imageHeight; row++)
             {
-                Color color = image[row][col];
-                rgbData[(row*imageWidth + col)*3] = (byte) (color.getRed() * 255);
-                rgbData[(row*imageWidth + col)*3 + 1] = (byte) (color.getGreen() * 255);
-                rgbData[(row*imageWidth + col)*3 + 2] = (byte) (color.getBlue() * 255);
+                for (int col = 0; col < imageWidth; col++)
+                {
+                    Color color = image[row][col];
+                    rgbData[(row*imageWidth + col)*3] = (byte) (color.getRed() * 255);
+                    rgbData[(row*imageWidth + col)*3 + 1] = (byte) (color.getGreen() * 255);
+                    rgbData[(row*imageWidth + col)*3 + 2] = (byte) (color.getBlue() * 255);
+                }
             }
         }
+        catch (Exception e) {
+            System.out.println("exceptionnnnnnnnn 2222222222222222");
+        }
+
 
         // Put your ray tracing code here!
         //
@@ -330,7 +347,13 @@ public class RayTracer {
         Color backgroundColor = createColorFromParams(params, 0, 1, 2);
         int numShadowRays = Integer.parseInt(params[3]);
         int maxNumOfRecursions = Integer.parseInt(params[4]);
-        int superSamplingLevel = Integer.parseInt(params[5]);
+        int superSamplingLevel = 1;
+        try {
+            superSamplingLevel = Integer.parseInt(params[5]);
+        }
+        catch (Exception e) {
+            System.out.println("didn't have super sampling as input");
+        }
 
         return new Settings(backgroundColor, numShadowRays, maxNumOfRecursions, superSamplingLevel);
     }

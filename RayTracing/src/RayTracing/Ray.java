@@ -7,7 +7,7 @@ public class Ray {
 
     public Ray(Vector p0, Vector v) {
         this.centerposition = p0;
-        this.v = v;
+        this.v = v.normalize();
     }
 
     public Vector getPointOnRay(double progress) {

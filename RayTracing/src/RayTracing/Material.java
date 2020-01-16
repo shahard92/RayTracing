@@ -15,4 +15,24 @@ public class Material {
         this.phongSpecularityCoefficient = phongSpecularityCoefficient;
         this.transparencyValue = transparencyValue;
     }
+
+    public Color getDiffuseColor() {
+        return diffuseColor;
+    }
+
+    public Color getSpecularColor() {
+        return specularColor;
+    }
+
+    public Color getReflectionColor() {
+        return reflectionColor;
+    }
+
+    public double getPhongSpecularityCoefficient() {
+        return phongSpecularityCoefficient;
+    }
+
+    public double getTransparencyValue() {
+        return transparencyValue;
+    }
 }

@@ -10,8 +10,10 @@ public class Scene {
     private ArrayList<Plane> planes;
     private ArrayList<Light> lights;
     private ArrayList<Triangle> triangles;
+    private ArrayList<Surface> allSurfaces;
 
     public Scene() {
+        allSurfaces = new ArrayList<>();
     }
 
     public Camera getCamera() {
@@ -44,6 +46,7 @@ public class Scene {
 
     public void setSpheres(ArrayList<Sphere> spheres) {
         this.spheres = spheres;
+        allSurfaces.addAll(spheres);
     }
 
     public ArrayList<Plane> getPlanes() {
@@ -52,6 +55,7 @@ public class Scene {
 
     public void setPlanes(ArrayList<Plane> planes) {
         this.planes = planes;
+        allSurfaces.addAll(planes);
     }
 
     public ArrayList<Light> getLights() {
@@ -68,5 +72,10 @@ public class Scene {
 
     public void setTriangles(ArrayList<Triangle> triangles) {
         this.triangles = triangles;
+        allSurfaces.addAll(triangles);
+    }
+
+    public ArrayList<Surface> getAllSurfaces() {
+        return allSurfaces;
     }
 }

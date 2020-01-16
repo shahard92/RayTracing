@@ -15,4 +15,24 @@ public class Light {
         this.shadowIntensity = shadowIntensity;
         this.width = width;
     }
+
+    public Vector getPosition() {
+        return position;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public double getSpecularIntensity() {
+        return specularIntensity;
+    }
+
+    public double getShadowIntensity() {
+        return shadowIntensity;
+    }
+
+    public double getWidth() {
+        return width;
+    }
 }
